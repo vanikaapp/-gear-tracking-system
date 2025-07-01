@@ -1,4 +1,4 @@
-# -gear-tracking-system
+# -GEAR / EQUIPMENT TRACKING SYSTEM
 ![image](https://github.com/user-attachments/assets/db7b911e-4c18-4e1b-aeb9-0b3b91fdff10)
 
 A simple, efficient web-based system built by our trucking company to track and manage flatbed gear and inventory like tarps, straps, chains, binders etc.
