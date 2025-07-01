@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Gear Snapshots - Gear Tracking System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i data-feather="package" class="me-2"></i>
+                Gear Snapshots
+            </h1>
+            <a href="{{ url_for('add_gear_snapshot') }}" class="btn btn-primary">
+                <i data-feather="plus" class="me-1"></i>
+                Add Gear
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <form method="GET" action="{{ url_for('gear_snapshots') }}">
+            <div class="row g-2">
+                <div class="col-md-8">
+                    <select name="trailer_id" class="form-select">
+                        <option value="">All Trailers</option>
+                        {% for trailer in trailers %}
+                        <option value="{{ trailer.trailer_id }}" {% if selected_trailer == trailer.trailer_id %}selected{% endif %}>
+                            {{ trailer.trailer_id }} - {{ trailer.location or 'No location' }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-outline-secondary w-100">
+                        <i data-feather="filter" class="me-1"></i>
+                        Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Gear Snapshots List -->
+<div class="row">
+    <div class="col-12">
+        {% if snapshots %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Trailer</th>
+                                <th>Gear Type</th>
+                                <th>Qty</th>
+                                <th>Condition</th>
+                                <th class="d-none d-md-table-cell">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for snapshot in snapshots %}
+                            <tr>
+                                <td>
+                                    <small>{{ snapshot.date_recorded.strftime('%m/%d/%Y %H:%M') }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ snapshot.trailer.trailer_id }}</strong>
+                                </td>
+                                <td>{{ snapshot.gear_type }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ snapshot.quantity }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if snapshot.condition == 'Good' else 'warning' if snapshot.condition == 'Fair' else 'danger' }}">
+                                        {{ snapshot.condition }}
+                                    </span>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    {{ snapshot.notes[:50] + '...' if snapshot.notes and snapshot.notes|length > 50 else snapshot.notes or '-' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i data-feather="package" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+            <h3 class="text-muted">No gear snapshots found</h3>
+            <p class="text-muted">
+                {% if selected_trailer %}
+                    No gear snapshots recorded for trailer {{ selected_trailer }}.
+                {% else %}
+                    Start by recording gear for your trailers.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('add_gear_snapshot') }}" class="btn btn-primary">
+                <i data-feather="plus" class="me-1"></i>
+                Add Gear Snapshot
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

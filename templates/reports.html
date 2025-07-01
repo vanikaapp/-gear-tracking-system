@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Gear Tracking System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i data-feather="bar-chart-2" class="me-2"></i>
+            Reports
+        </h1>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <form method="GET" action="{{ url_for('reports') }}">
+            <div class="row g-2">
+                <div class="col-md-8">
+                    <select name="trailer_id" class="form-select">
+                        <option value="">All Trailers</option>
+                        {% for trailer in trailers %}
+                        <option value="{{ trailer.trailer_id }}" {% if selected_trailer == trailer.trailer_id %}selected{% endif %}>
+                            {{ trailer.trailer_id }} - {{ trailer.location or 'No location' }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-outline-secondary w-100">
+                        <i data-feather="filter" class="me-1"></i>
+                        Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reports -->
+<div class="row">
+    <!-- Gear Report -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i data-feather="package" class="me-2"></i>
+                    Current Gear by Trailer
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if trailer_gear %}
+                {% for trailer_id, gear_list in trailer_gear.items() %}
+                <div class="mb-3">
+                    <h6 class="fw-bold text-primary">{{ trailer_id }}</h6>
+                    {% if gear_list %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Gear Type</th>
+                                    <th>Qty</th>
+                                    <th>Condition</th>
+                                    <th>Last Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gear in gear_list %}
+                                <tr>
+                                    <td>{{ gear.gear_type }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ gear.quantity }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if gear.condition == 'Good' else 'warning' if gear.condition == 'Fair' else 'danger' }}">
+                                            {{ gear.condition }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ gear.date_recorded.strftime('%m/%d/%Y') }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted"><small>No gear recorded</small></p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i data-feather="package" style="width: 48px; height: 48px;" class="text-muted mb-2"></i>
+                    <p class="text-muted">No gear data available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Driver Report -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i data-feather="user" class="me-2"></i>
+                    Last Driver Assignment
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if last_driver %}
+                {% for trailer_id, assignment in last_driver.items() %}
+                <div class="mb-3">
+                    <h6 class="fw-bold text-info">{{ trailer_id }}</h6>
+                    <div class="card">
+                        <div class="card-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-8">
+                                    <strong>{{ assignment.driver_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        Assigned: {{ assignment.assigned_date.strftime('%m/%d/%Y %H:%M') }}
+                                    </small>
+                                    {% if assignment.returned_date %}
+                                    <br>
+                                    <small class="text-success">
+                                        Returned: {{ assignment.returned_date.strftime('%m/%d/%Y %H:%M') }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-4 text-end">
+                                    {% if assignment.returned_date %}
+                                    <span class="badge bg-secondary">Returned</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Active</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i data-feather="user" style="width: 48px; height: 48px;" class="text-muted mb-2"></i>
+                    <p class="text-muted">No driver assignments found</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i data-feather="zap" class="me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('add_gear_snapshot') }}" class="btn btn-outline-primary w-100">
+                            <i data-feather="package" class="me-1"></i>
+                            Add Gear
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('add_driver_assignment') }}" class="btn btn-outline-info w-100">
+                            <i data-feather="user-plus" class="me-1"></i>
+                            Assign Driver
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('audit_log', trailer_id=selected_trailer) }}" class="btn btn-outline-secondary w-100">
+                            <i data-feather="list" class="me-1"></i>
+                            View Audit Log
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('trailers') }}" class="btn btn-outline-warning w-100">
+                            <i data-feather="truck" class="me-1"></i>
+                            View Trailers
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

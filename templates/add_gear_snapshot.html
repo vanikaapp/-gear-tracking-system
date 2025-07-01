@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Add Gear Snapshot - Gear Tracking System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i data-feather="package" class="me-2"></i>
+            Add Gear Snapshot
+        </h1>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_gear_snapshot') }}">
+                    <div class="mb-3">
+                        <label for="trailer_id" class="form-label">Trailer *</label>
+                        <select class="form-select" id="trailer_id" name="trailer_id" required>
+                            <option value="">Select a trailer...</option>
+                            {% for trailer in trailers %}
+                            <option value="{{ trailer.id }}">
+                                {{ trailer.trailer_id }} - {{ trailer.location or 'No location' }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="gear_type" class="form-label">Gear Type *</label>
+                        <input type="text" class="form-control" id="gear_type" name="gear_type" 
+                               placeholder="e.g., Chains, Straps, Tarps, Binders" required>
+                        <div class="form-text">Type of gear being recorded</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity *</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" 
+                               value="1" min="0" max="999" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="condition" class="form-label">Condition *</label>
+                        <select class="form-select" id="condition" name="condition" required>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                            <option value="Damaged">Damaged</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="Additional details about this gear..."></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('gear_snapshots') }}" class="btn btn-secondary me-md-2">
+                            <i data-feather="arrow-left" class="me-1"></i>
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="save" class="me-1"></i>
+                            Add Gear
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Add Common Gear -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i data-feather="zap" class="me-1"></i>
+                    Quick Add Common Gear
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2" id="quickAddButtons">
+                    <div class="col-6 col-md-3">
+                        <button type="button" class="btn btn-outline-primary w-100 quick-add-btn" 
+                                data-gear="Chains">Chains</button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button type="button" class="btn btn-outline-primary w-100 quick-add-btn" 
+                                data-gear="Straps">Straps</button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button type="button" class="btn btn-outline-primary w-100 quick-add-btn" 
+                                data-gear="Tarps">Tarps</button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button type="button" class="btn btn-outline-primary w-100 quick-add-btn" 
+                                data-gear="Binders">Binders</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quickAddButtons = document.querySelectorAll('.quick-add-btn');
+    const gearTypeInput = document.getElementById('gear_type');
+    
+    quickAddButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const gearType = this.getAttribute('data-gear');
+            gearTypeInput.value = gearType;
+            gearTypeInput.focus();
+        });
+    });
+});
+</script>
+{% endblock %}

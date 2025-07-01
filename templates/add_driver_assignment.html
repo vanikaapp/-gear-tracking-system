@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Assign Driver - Gear Tracking System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i data-feather="user-plus" class="me-2"></i>
+            Assign Driver to Trailer
+        </h1>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_driver_assignment') }}">
+                    <div class="mb-3">
+                        <label for="trailer_id" class="form-label">Trailer *</label>
+                        <select class="form-select" id="trailer_id" name="trailer_id" required>
+                            <option value="">Select a trailer...</option>
+                            {% for trailer in trailers %}
+                            <option value="{{ trailer.id }}">
+                                {{ trailer.trailer_id }} - {{ trailer.location or 'No location' }} ({{ trailer.status }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choose the trailer to assign</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="driver_name" class="form-label">Driver Name *</label>
+                        <input type="text" class="form-control" id="driver_name" name="driver_name" 
+                               placeholder="e.g., John Smith, J. Doe" required>
+                        <div class="form-text">Full name of the driver</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Assignment Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="Route, special instructions, or other notes..."></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('driver_assignments') }}" class="btn btn-secondary me-md-2">
+                            <i data-feather="arrow-left" class="me-1"></i>
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="user-check" class="me-1"></i>
+                            Assign Driver
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Current Assignments Info -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i data-feather="info" class="me-1"></i>
+                    Active Assignments
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Trailer</th>
+                                <th>Driver</th>
+                                <th>Assigned</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activeAssignments">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // This would normally fetch current assignments via AJAX
+    // For simplicity, we'll leave this as a placeholder
+    const tbody = document.getElementById('activeAssignments');
+    tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">Loading active assignments...</td></tr>';
+});
+</script>
+{% endblock %}

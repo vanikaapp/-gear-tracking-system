@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Driver Assignments - Gear Tracking System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i data-feather="users" class="me-2"></i>
+                Driver Assignments
+            </h1>
+            <a href="{{ url_for('add_driver_assignment') }}" class="btn btn-primary">
+                <i data-feather="user-plus" class="me-1"></i>
+                Assign Driver
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Assignments List -->
+<div class="row">
+    <div class="col-12">
+        {% if assignments %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Trailer</th>
+                                <th>Driver</th>
+                                <th>Assigned</th>
+                                <th>Returned</th>
+                                <th class="d-none d-md-table-cell">Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr class="{{ 'table-success' if not assignment.returned_date else '' }}">
+                                <td>
+                                    <strong>{{ assignment.trailer.trailer_id }}</strong>
+                                </td>
+                                <td>{{ assignment.driver_name }}</td>
+                                <td>
+                                    <small>{{ assignment.assigned_date.strftime('%m/%d/%Y %H:%M') }}</small>
+                                </td>
+                                <td>
+                                    {% if assignment.returned_date %}
+                                        <small class="text-success">{{ assignment.returned_date.strftime('%m/%d/%Y %H:%M') }}</small>
+                                    {% else %}
+                                        <span class="badge bg-warning">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    {{ assignment.notes[:50] + '...' if assignment.notes and assignment.notes|length > 50 else assignment.notes or '-' }}
+                                </td>
+                                <td>
+                                    {% if not assignment.returned_date %}
+                                    <form method="POST" action="{{ url_for('return_trailer', assignment_id=assignment.id) }}" 
+                                          style="display: inline;" onsubmit="return confirm('Mark trailer as returned?')">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i data-feather="check" class="me-1"></i>
+                                            Return
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i data-feather="users" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+            <h3 class="text-muted">No driver assignments found</h3>
+            <p class="text-muted">Start by assigning trailers to drivers.</p>
+            <a href="{{ url_for('add_driver_assignment') }}" class="btn btn-primary">
+                <i data-feather="user-plus" class="me-1"></i>
+                Assign First Driver
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

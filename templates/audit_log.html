@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Log - Gear Tracking System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i data-feather="list" class="me-2"></i>
+            Audit Log
+        </h1>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <form method="GET" action="{{ url_for('audit_log') }}">
+            <div class="row g-2">
+                <div class="col-md-8">
+                    <select name="trailer_id" class="form-select">
+                        <option value="">All Trailers</option>
+                        {% for trailer in trailers %}
+                        <option value="{{ trailer.trailer_id }}" {% if selected_trailer == trailer.trailer_id %}selected{% endif %}>
+                            {{ trailer.trailer_id }} - {{ trailer.location or 'No location' }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-outline-secondary w-100">
+                        <i data-feather="filter" class="me-1"></i>
+                        Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Audit Log -->
+<div class="row">
+    <div class="col-12">
+        {% if logs %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Trailer</th>
+                                <th>Action</th>
+                                <th class="d-none d-md-table-cell">Gear Type</th>
+                                <th class="d-none d-md-table-cell">Qty Change</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>
+                                    <small>{{ log.created_at.strftime('%m/%d/%Y %H:%M') }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ log.trailer.trailer_id }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 
+                                        'success' if log.action_type == 'ADD' else 
+                                        'danger' if log.action_type == 'REMOVE' else 
+                                        'warning' if log.action_type == 'LOSS' else 
+                                        'info' if log.action_type == 'ASSIGN' else 
+                                        'secondary' if log.action_type == 'RETURN' else 
+                                        'primary' }}">
+                                        {{ log.action_type }}
+                                    </span>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    {{ log.gear_type or '-' }}
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    {% if log.quantity_change %}
+                                    <span class="badge bg-{{ 'success' if log.quantity_change > 0 else 'danger' }}">
+                                        {{ '+' if log.quantity_change > 0 else '' }}{{ log.quantity_change }}
+                                    </span>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ log.description }}
+                                    {% if log.old_condition and log.new_condition and log.old_condition != log.new_condition %}
+                                    <br>
+                                    <small class="text-muted">
+                                        Condition: {{ log.old_condition }} → {{ log.new_condition }}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i data-feather="list" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+            <h3 class="text-muted">No audit entries found</h3>
+            <p class="text-muted">
+                {% if selected_trailer %}
+                    No audit entries for trailer {{ selected_trailer }}.
+                {% else %}
+                    Audit entries will appear here as you use the system.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Trailers - Gear Tracking System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i data-feather="truck" class="me-2"></i>
+                Trailers
+            </h1>
+            <a href="{{ url_for('add_trailer') }}" class="btn btn-primary">
+                <i data-feather="plus" class="me-1"></i>
+                Add Trailer
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="row mb-4">
+    <div class="col-12">
+        <form method="GET" action="{{ url_for('trailers') }}">
+            <div class="input-group">
+                <input type="text" class="form-control" name="search" 
+                       placeholder="Search by Trailer ID, Location, or Status..." 
+                       value="{{ search or '' }}">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i data-feather="search"></i>
+                </button>
+                {% if search %}
+                <a href="{{ url_for('trailers') }}" class="btn btn-outline-secondary">
+                    <i data-feather="x"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Trailers List -->
+<div class="row">
+    <div class="col-12">
+        {% if trailers %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Trailer ID</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th class="d-none d-md-table-cell">Notes</th>
+                                <th class="d-none d-md-table-cell">Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trailer in trailers %}
+                            <tr>
+                                <td>
+                                    <strong>{{ trailer.trailer_id }}</strong>
+                                </td>
+                                <td>{{ trailer.location or '-' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if trailer.status == 'Available' else 'warning' if trailer.status == 'In Use' else 'secondary' }}">
+                                        {{ trailer.status }}
+                                    </span>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    {{ trailer.notes[:50] + '...' if trailer.notes and trailer.notes|length > 50 else trailer.notes or '-' }}
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    <small class="text-muted">{{ trailer.updated_at.strftime('%m/%d/%Y %H:%M') }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('gear_snapshots', trailer_id=trailer.trailer_id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="package"></i>
+                                            <span class="d-none d-md-inline ms-1">Gear</span>
+                                        </a>
+                                        <a href="{{ url_for('reports', trailer_id=trailer.trailer_id) }}" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i data-feather="bar-chart-2"></i>
+                                            <span class="d-none d-md-inline ms-1">Report</span>
+                                        </a>
+                                        <a href="{{ url_for('audit_log', trailer_id=trailer.trailer_id) }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i data-feather="list"></i>
+                                            <span class="d-none d-md-inline ms-1">Log</span>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i data-feather="truck" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+            <h3 class="text-muted">No trailers found</h3>
+            <p class="text-muted">
+                {% if search %}
+                    No trailers match your search criteria.
+                {% else %}
+                    Start by adding your first trailer to the system.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('add_trailer') }}" class="btn btn-primary">
+                <i data-feather="plus" class="me-1"></i>
+                Add First Trailer
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

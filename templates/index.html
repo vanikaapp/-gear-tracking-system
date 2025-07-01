@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Gear Tracking System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i data-feather="home" class="me-2"></i>
+            Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary">
+            <div class="card-body text-center">
+                <i data-feather="truck" style="width: 48px; height: 48px;" class="mb-2"></i>
+                <h3 class="card-title">{{ trailer_count }}</h3>
+                <p class="card-text">Total Trailers</p>
+                <a href="{{ url_for('trailers') }}" class="btn btn-light btn-sm">View Trailers</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-success">
+            <div class="card-body text-center">
+                <i data-feather="user-check" style="width: 48px; height: 48px;" class="mb-2"></i>
+                <h3 class="card-title">{{ active_assignments }}</h3>
+                <p class="card-text">Active Assignments</p>
+                <a href="{{ url_for('driver_assignments') }}" class="btn btn-light btn-sm">View Assignments</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-info">
+            <div class="card-body text-center">
+                <i data-feather="activity" style="width: 48px; height: 48px;" class="mb-2"></i>
+                <h3 class="card-title">{{ recent_audits|length }}</h3>
+                <p class="card-text">Recent Activities</p>
+                <a href="{{ url_for('audit_log') }}" class="btn btn-light btn-sm">View Audit Log</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="mb-3">Quick Actions</h3>
+        <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+                <a href="{{ url_for('add_trailer') }}" class="btn btn-outline-primary w-100 py-3">
+                    <i data-feather="plus-circle" class="mb-2 d-block"></i>
+                    Add Trailer
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="{{ url_for('add_gear_snapshot') }}" class="btn btn-outline-success w-100 py-3">
+                    <i data-feather="package" class="mb-2 d-block"></i>
+                    Add Gear
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="{{ url_for('add_driver_assignment') }}" class="btn btn-outline-info w-100 py-3">
+                    <i data-feather="user-plus" class="mb-2 d-block"></i>
+                    Assign Driver
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="{{ url_for('reports') }}" class="btn btn-outline-warning w-100 py-3">
+                    <i data-feather="bar-chart-2" class="mb-2 d-block"></i>
+                    View Reports
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+{% if recent_audits %}
+<div class="row">
+    <div class="col-12">
+        <h3 class="mb-3">Recent Activity</h3>
+        <div class="card">
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for audit in recent_audits %}
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">{{ audit.trailer.trailer_id }}</div>
+                            <small class="text-muted">{{ audit.description }}</small>
+                        </div>
+                        <span class="badge bg-{{ 'success' if audit.action_type == 'ADD' else 'primary' if audit.action_type == 'ASSIGN' else 'secondary' }} rounded-pill">
+                            {{ audit.action_type }}
+                        </span>
+                        <small class="text-muted ms-2">{{ audit.created_at.strftime('%m/%d %H:%M') }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('audit_log') }}" class="btn btn-sm btn-outline-secondary">
+                        View Full Audit Log
+                        <i data-feather="arrow-right" class="ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
