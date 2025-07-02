@@ -418,8 +418,10 @@ def internal_error(error):
 
 @app.route("/init-db")
 def init_db():
+    print("🚨 REDEPLOY TEST — JULY 2 @ 2:58 PM")
     from app import db
     db.create_all()
     return "✅ Database initialized"
+
 
 
