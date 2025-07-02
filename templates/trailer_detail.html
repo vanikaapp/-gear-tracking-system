@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}{{ trailer.trailer_id }} - Trailer Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i data-feather="truck" class="me-2"></i>
+                Trailer {{ trailer.trailer_id }}
+            </h1>
+            <div class="btn-group">
+                <a href="{{ url_for('trailers') }}" class="btn btn-secondary">
+                    <i data-feather="arrow-left" class="me-1"></i>
+                    Back to Trailers
+                </a>
+                <a href="{{ url_for('add_gear_snapshot') }}?trailer={{ trailer.trailer_id }}" class="btn btn-success">
+                    <i data-feather="package" class="me-1"></i>
+                    Add Gear
+                </a>
+                {% if not current_driver %}
+                <a href="{{ url_for('add_driver_assignment') }}?trailer={{ trailer.id }}" class="btn btn-primary">
+                    <i data-feather="user-plus" class="me-1"></i>
+                    Assign Driver
+                </a>
+                {% endif %}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-danger dropdown-toggle" data-bs-toggle="dropdown">
+                        <i data-feather="trash-2" class="me-1"></i>
+                        Delete
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><h6 class="dropdown-header">Delete Trailer</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="POST" action="{{ url_for('delete_trailer', trailer_id=trailer.trailer_id) }}" 
+                                  style="display: inline;" id="deleteForm">
+                                <button type="button" class="dropdown-item text-danger" onclick="confirmDelete()">
+                                    <i data-feather="trash-2" class="me-1"></i>
+                                    Permanently Delete {{ trailer.trailer_id }}
+                                </button>
+                            </form>
+                        </li>
+                        <li><small class="dropdown-item-text text-muted">This action cannot be undone!</small></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trailer Info Card -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i data-feather="info" class="me-2"></i>
+                    Trailer Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Trailer ID:</strong> {{ trailer.trailer_id }}<br>
+                        <strong>Location:</strong> {{ trailer.location or 'Not specified' }}<br>
+                        <strong>Status:</strong> 
+                        <span class="badge bg-{{ 'success' if trailer.status == 'Available' else 'warning' if trailer.status == 'In Use' else 'secondary' }}">
+                            {{ trailer.status }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Created:</strong> {{ trailer.created_at.strftime('%m/%d/%Y %H:%M EST') }}<br>
+                        <strong>Last Updated:</strong> {{ trailer.updated_at.strftime('%m/%d/%Y %H:%M EST') }}<br>
+                        {% if trailer.notes %}
+                        <strong>Notes:</strong> {{ trailer.notes }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Driver Card -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i data-feather="user" class="me-2"></i>
+                    Current Assignment
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if current_driver %}
+                <div class="text-center">
+                    <h6 class="text-primary">{{ current_driver.driver_name }}</h6>
+                    <small class="text-muted">
+                        Assigned: {{ current_driver.assigned_date.strftime('%m/%d/%Y %H:%M EST') }}
+                    </small>
+                    {% if current_driver.notes %}
+                    <p class="mt-2 small">{{ current_driver.notes }}</p>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('return_trailer', assignment_id=current_driver.id) }}" 
+                          class="mt-3" onsubmit="return confirm('Mark trailer as returned?')">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i data-feather="check" class="me-1"></i>
+                            Mark as Returned
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i data-feather="user-x" style="width: 48px; height: 48px;" class="mb-2"></i>
+                    <p>No driver assigned</p>
+                    <a href="{{ url_for('add_driver_assignment') }}?trailer={{ trailer.id }}" class="btn btn-sm btn-primary">
+                        <i data-feather="user-plus" class="me-1"></i>
+                        Assign Driver
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Gear -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i data-feather="package" class="me-2"></i>
+                    Current Gear Inventory
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if latest_gear %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Gear Type</th>
+                                <th>Quantity</th>
+                                <th>Condition</th>
+                                <th>Last Updated</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for gear in latest_gear %}
+                            <tr>
+                                <td><strong>{{ gear.gear_type }}</strong></td>
+                                <td>
+                                    <span class="badge bg-primary">{{ gear.quantity }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if gear.condition == 'Good' else 'warning' if gear.condition == 'Fair' else 'danger' }}">
+                                        {{ gear.condition }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ gear.date_recorded.strftime('%m/%d/%Y %H:%M EST') }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ gear.notes[:50] + '...' if gear.notes and gear.notes|length > 50 else gear.notes or '-' }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i data-feather="package" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                    <h6 class="text-muted">No gear recorded</h6>
+                    <p class="text-muted">Start by adding gear to this trailer.</p>
+                    <a href="{{ url_for('add_gear_snapshot') }}?trailer={{ trailer.trailer_id }}" class="btn btn-primary">
+                        <i data-feather="plus" class="me-1"></i>
+                        Add First Gear
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for History -->
+<div class="row">
+    <div class="col-12">
+        <ul class="nav nav-tabs" id="historyTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit" type="button" role="tab">
+                    <i data-feather="list" class="me-1"></i>
+                    Audit Log ({{ recent_logs|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments" type="button" role="tab">
+                    <i data-feather="users" class="me-1"></i>
+                    Assignment History ({{ assignment_history|length }})
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="historyTabsContent">
+            <!-- Audit Log Tab -->
+            <div class="tab-pane fade show active" id="audit" role="tabpanel">
+                <div class="card border-top-0">
+                    <div class="card-body">
+                        {% if recent_logs %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date/Time</th>
+                                        <th>Action</th>
+                                        <th>Description</th>
+                                        <th>Gear</th>
+                                        <th>Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in recent_logs %}
+                                    <tr>
+                                        <td>
+                                            <small>{{ log.created_at.strftime('%m/%d/%Y %H:%M EST') }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 
+                                                'success' if log.action_type == 'ADD' else 
+                                                'danger' if log.action_type == 'REMOVE' else 
+                                                'warning' if log.action_type == 'LOSS' else 
+                                                'info' if log.action_type == 'ASSIGN' else 
+                                                'secondary' if log.action_type == 'RETURN' else 
+                                                'primary' }}">
+                                                {{ log.action_type }}
+                                            </span>
+                                        </td>
+                                        <td>{{ log.description }}</td>
+                                        <td>{{ log.gear_type or '-' }}</td>
+                                        <td>
+                                            {% if log.quantity_change %}
+                                            <span class="badge bg-{{ 'success' if log.quantity_change > 0 else 'danger' }}">
+                                                {{ '+' if log.quantity_change > 0 else '' }}{{ log.quantity_change }}
+                                            </span>
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i data-feather="list" style="width: 48px; height: 48px;" class="mb-2"></i>
+                            <p>No audit entries yet</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Assignment History Tab -->
+            <div class="tab-pane fade" id="assignments" role="tabpanel">
+                <div class="card border-top-0">
+                    <div class="card-body">
+                        {% if assignment_history %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Driver</th>
+                                        <th>Assigned</th>
+                                        <th>Returned</th>
+                                        <th>Duration</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in assignment_history %}
+                                    <tr class="{{ 'table-warning' if not assignment.returned_date else '' }}">
+                                        <td><strong>{{ assignment.driver_name }}</strong></td>
+                                        <td>
+                                            <small>{{ assignment.assigned_date.strftime('%m/%d/%Y %H:%M EST') }}</small>
+                                        </td>
+                                        <td>
+                                            {% if assignment.returned_date %}
+                                            <small class="text-success">{{ assignment.returned_date.strftime('%m/%d/%Y %H:%M EST') }}</small>
+                                            {% else %}
+                                            <span class="badge bg-warning">Active</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if assignment.returned_date %}
+                                            <small class="text-muted">
+                                                {{ ((assignment.returned_date - assignment.assigned_date).days) }} days
+                                            </small>
+                                            {% else %}
+                                            <small class="text-warning">Ongoing</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ assignment.notes[:30] + '...' if assignment.notes and assignment.notes|length > 30 else assignment.notes or '-' }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i data-feather="users" style="width: 48px; height: 48px;" class="mb-2"></i>
+                            <p>No assignment history</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete() {
+    const trailerID = '{{ trailer.trailer_id }}';
+    const hasGear = {{ 'true' if latest_gear else 'false' }};
+    const hasHistory = {{ 'true' if assignment_history else 'false' }};
+    
+    let message = `Are you sure you want to permanently delete trailer ${trailerID}?\n\n`;
+    
+    if (hasGear) {
+        message += "⚠️ This trailer has gear records.\n";
+    }
+    if (hasHistory) {
+        message += "⚠️ This trailer has assignment history.\n";
+    }
+    
+    message += "\nThis action cannot be undone and will delete:\n";
+    message += "• All gear snapshots\n";
+    message += "• All driver assignments\n";
+    message += "• All audit logs\n";
+    message += "• The trailer record\n\n";
+    message += "Type 'DELETE' to confirm:";
+    
+    const confirmation = prompt(message);
+    
+    if (confirmation === 'DELETE') {
+        document.getElementById('deleteForm').submit();
+    } else if (confirmation !== null) {
+        alert('Deletion cancelled. You must type "DELETE" exactly to confirm.');
+    }
+}
+</script>
+{% endblock %}

@@ -16,7 +16,7 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-body">
-                <form method="POST" action="{{ url_for('add_gear_snapshot') }}">
+                <form method="POST" action="{{ url_for('add_gear_snapshot') }}" id="addGearForm">
                     <div class="mb-3">
                         <label for="trailer_id" class="form-label">Trailer *</label>
                         <select class="form-select" id="trailer_id" name="trailer_id" required>
@@ -63,7 +63,7 @@
                             <i data-feather="arrow-left" class="me-1"></i>
                             Cancel
                         </a>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" id="gearSubmitBtn">
                             <i data-feather="save" class="me-1"></i>
                             Add Gear
                         </button>

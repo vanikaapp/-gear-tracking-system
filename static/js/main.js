@@ -59,9 +59,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Form validation feedback
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
+    // Form validation feedback - ONLY apply to search forms and other non-critical forms
+    // Completely avoid main CRUD forms to prevent interference
+    const searchForms = document.querySelectorAll('form[action*="search"], form[method="GET"]');
+    searchForms.forEach(form => {
         form.addEventListener('submit', function(e) {
             if (!form.checkValidity()) {
                 e.preventDefault();
@@ -78,9 +79,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Add loading states to buttons (but skip if button already has custom handler)
-    const submitButtons = document.querySelectorAll('button[type="submit"]:not([id="submitBtn"])');
-    submitButtons.forEach(button => {
+    // Remove all submit button interference - let forms work naturally
+    // Only add loading states to very specific buttons that we know need it
+    const returnButtons = document.querySelectorAll('button[type="submit"][onclick*="return"]');
+    returnButtons.forEach(button => {
         button.addEventListener('click', function() {
             const form = this.closest('form');
             if (form && form.checkValidity()) {
@@ -88,11 +90,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const originalText = this.innerHTML;
                 this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Processing...';
                 
-                // Re-enable after 5 seconds as fallback
+                // Re-enable after 3 seconds as fallback
                 setTimeout(() => {
                     this.disabled = false;
                     this.innerHTML = originalText;
-                }, 5000);
+                }, 3000);
             }
         });
     });

@@ -8,6 +8,9 @@
         <h1 class="mb-4">
             <i data-feather="list" class="me-2"></i>
             Audit Log
+            {% if selected_trailer %}
+            <small class="text-muted">- {{ selected_trailer }}</small>
+            {% endif %}
         </h1>
     </div>
 </div>
@@ -18,7 +21,7 @@
         <form method="GET" action="{{ url_for('audit_log') }}">
             <div class="row g-2">
                 <div class="col-md-8">
-                    <select name="trailer_id" class="form-select">
+                    <select name="trailer_id" class="form-select" onchange="this.form.submit()">
                         <option value="">All Trailers</option>
                         {% for trailer in trailers %}
                         <option value="{{ trailer.trailer_id }}" {% if selected_trailer == trailer.trailer_id %}selected{% endif %}>
@@ -37,6 +40,30 @@
         </form>
     </div>
 </div>
+
+<!-- Results Summary -->
+{% if selected_trailer %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i data-feather="info" class="me-2"></i>
+            Showing {{ logs|length }} audit entries for trailer <strong>{{ selected_trailer }}</strong>
+            {% if logs|length == 0 %}
+            - No audit entries found for this trailer.
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-secondary">
+            <i data-feather="list" class="me-2"></i>
+            Showing {{ logs|length }} total audit entries across all trailers
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Audit Log -->
 <div class="row">
@@ -60,10 +87,13 @@
                             {% for log in logs %}
                             <tr>
                                 <td>
-                                    <small>{{ log.created_at.strftime('%m/%d/%Y %H:%M') }}</small>
+                                    <small>{{ log.created_at.strftime('%m/%d/%Y %H:%M EST') }}</small>
                                 </td>
                                 <td>
-                                    <strong>{{ log.trailer.trailer_id }}</strong>
+                                    <a href="{{ url_for('trailer_detail', trailer_id=log.trailer.trailer_id) }}" 
+                                       class="text-decoration-none">
+                                        <strong>{{ log.trailer.trailer_id }}</strong>
+                                    </a>
                                 </td>
                                 <td>
                                     <span class="badge bg-{{ 
@@ -111,10 +141,21 @@
             <p class="text-muted">
                 {% if selected_trailer %}
                     No audit entries for trailer {{ selected_trailer }}.
+                    <br>Try selecting a different trailer or view all trailers.
                 {% else %}
                     Audit entries will appear here as you use the system.
                 {% endif %}
             </p>
+            {% if selected_trailer %}
+            <a href="{{ url_for('audit_log') }}" class="btn btn-secondary me-2">
+                <i data-feather="list" class="me-1"></i>
+                View All Trailers
+            </a>
+            <a href="{{ url_for('trailer_detail', trailer_id=selected_trailer) }}" class="btn btn-primary">
+                <i data-feather="truck" class="me-1"></i>
+                View Trailer Details
+            </a>
+            {% endif %}
         </div>
         {% endif %}
     </div>

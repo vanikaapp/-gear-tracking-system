@@ -16,7 +16,7 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-body">
-                <form method="POST" action="{{ url_for('add_driver_assignment') }}">
+                <form method="POST" action="{{ url_for('add_driver_assignment') }}" id="addDriverForm">
                     <div class="mb-3">
                         <label for="trailer_id" class="form-label">Trailer *</label>
                         <select class="form-select" id="trailer_id" name="trailer_id" required>
@@ -48,7 +48,7 @@
                             <i data-feather="arrow-left" class="me-1"></i>
                             Cancel
                         </a>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" id="driverSubmitBtn">
                             <i data-feather="user-check" class="me-1"></i>
                             Assign Driver
                         </button>
@@ -76,7 +76,7 @@
                             </tr>
                         </thead>
                         <tbody id="activeAssignments">
-                            <!-- Will be populated by JavaScript -->
+                            <tr><td colspan="3" class="text-muted text-center">No active assignments loaded</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -84,13 +84,4 @@
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // This would normally fetch current assignments via AJAX
-    // For simplicity, we'll leave this as a placeholder
-    const tbody = document.getElementById('activeAssignments');
-    tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">Loading active assignments...</td></tr>';
-});
-</script>
 {% endblock %}

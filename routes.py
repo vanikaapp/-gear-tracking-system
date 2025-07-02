@@ -1,7 +1,11 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime
+import pytz
 from app import app, db
-from models import Trailer, GearSnapshot, DriverAssignment, AuditLog
+from models import Trailer, GearSnapshot, DriverAssignment, AuditLog, get_est_now
+
+# EST timezone
+EST = pytz.timezone('US/Eastern')
 
 @app.route('/')
 def index():
@@ -29,6 +33,65 @@ def trailers():
         trailers_list = Trailer.query.all()
     
     return render_template('trailers.html', trailers=trailers_list, search=search)
+
+@app.route('/trailers/<trailer_id>')
+def trailer_detail(trailer_id):
+    """Show detailed view of a specific trailer"""
+    trailer = Trailer.query.filter_by(trailer_id=trailer_id).first_or_404()
+    
+    # Get current driver assignment
+    current_driver = trailer.get_current_driver()
+    
+    # Get latest gear for each type
+    latest_gear = trailer.get_latest_gear()
+    
+    # Get recent audit logs
+    recent_logs = trailer.get_recent_logs(limit=20)
+    
+    # Get assignment history
+    assignment_history = DriverAssignment.query.filter_by(
+        trailer_id=trailer.id
+    ).order_by(DriverAssignment.assigned_date.desc()).limit(10).all()
+    
+    return render_template('trailer_detail.html', 
+                         trailer=trailer,
+                         current_driver=current_driver,
+                         latest_gear=latest_gear,
+                         recent_logs=recent_logs,
+                         assignment_history=assignment_history)
+
+@app.route('/trailers/<trailer_id>/delete', methods=['POST'])
+def delete_trailer(trailer_id):
+    """Delete a trailer and all related data"""
+    trailer = Trailer.query.filter_by(trailer_id=trailer_id).first_or_404()
+    
+    try:
+        # Check if trailer has active assignments
+        active_assignment = DriverAssignment.query.filter_by(
+            trailer_id=trailer.id,
+            returned_date=None
+        ).first()
+        
+        if active_assignment:
+            flash(f'Cannot delete trailer {trailer_id}: Currently assigned to {active_assignment.driver_name}. Please return the trailer first.', 'error')
+            return redirect(url_for('trailer_detail', trailer_id=trailer_id))
+        
+        # Store trailer info for logging
+        trailer_info = f"{trailer.trailer_id} (Location: {trailer.location or 'None'})"
+        
+        # Delete trailer (cascade will handle related records)
+        db.session.delete(trailer)
+        db.session.commit()
+        
+        app.logger.info(f"Trailer {trailer_info} deleted successfully")
+        flash(f'Trailer {trailer.trailer_id} has been permanently deleted from the system.', 'success')
+        return redirect(url_for('trailers'))
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting trailer {trailer_id}: {str(e)}")
+        flash(f'Error deleting trailer: {str(e)}', 'error')
+        return redirect(url_for('trailer_detail', trailer_id=trailer_id))
 
 @app.route('/trailers/add', methods=['GET', 'POST'])
 def add_trailer():
@@ -168,49 +231,78 @@ def add_driver_assignment():
             flash(f'Trailer {trailer.trailer_id} is already assigned to {existing.driver_name}!', 'error')
             return render_template('add_driver_assignment.html', trailers=Trailer.query.all())
         
+        # Create assignment
         assignment = DriverAssignment(
             trailer_id=trailer_id,
             driver_name=driver_name,
             notes=notes
         )
         
+        # Update trailer status to "In Use"
+        trailer = Trailer.query.get(trailer_id)
+        old_status = trailer.status
+        trailer.status = 'In Use'
+        trailer.updated_at = get_est_now()
+        
         db.session.add(assignment)
         db.session.commit()
         
-        # Create audit log
-        trailer = Trailer.query.get(trailer_id)
-        audit = AuditLog(
+        # Create audit log for assignment
+        audit_assignment = AuditLog(
             trailer_id=trailer_id,
             action_type='ASSIGN',
             description=f'Trailer assigned to driver {driver_name}'
         )
-        db.session.add(audit)
+        db.session.add(audit_assignment)
+        
+        # Create audit log for status change
+        audit_status = AuditLog(
+            trailer_id=trailer_id,
+            action_type='UPDATE',
+            description=f'Status changed from {old_status} to In Use (driver assigned)'
+        )
+        db.session.add(audit_status)
         db.session.commit()
         
-        flash(f'Trailer {trailer.trailer_id} assigned to {driver_name}!', 'success')
+        flash(f'Trailer {trailer.trailer_id} assigned to {driver_name} and status updated to "In Use"!', 'success')
         return redirect(url_for('driver_assignments'))
     
-    trailers_list = Trailer.query.all()
+    # Only show available trailers for assignment
+    trailers_list = Trailer.query.filter(Trailer.status.in_(['Available', 'Maintenance'])).all()
     return render_template('add_driver_assignment.html', trailers=trailers_list)
 
 @app.route('/driver-assignments/<int:assignment_id>/return', methods=['POST'])
 def return_trailer(assignment_id):
     """Mark a trailer as returned"""
     assignment = DriverAssignment.query.get_or_404(assignment_id)
-    assignment.returned_date = datetime.utcnow()
+    assignment.returned_date = get_est_now()
+    
+    # Update trailer status back to "Available"
+    trailer = assignment.trailer
+    old_status = trailer.status
+    trailer.status = 'Available'
+    trailer.updated_at = get_est_now()
     
     db.session.commit()
     
-    # Create audit log
-    audit = AuditLog(
+    # Create audit log for return
+    audit_return = AuditLog(
         trailer_id=assignment.trailer_id,
         action_type='RETURN',
         description=f'Trailer returned by driver {assignment.driver_name}'
     )
-    db.session.add(audit)
+    db.session.add(audit_return)
+    
+    # Create audit log for status change
+    audit_status = AuditLog(
+        trailer_id=assignment.trailer_id,
+        action_type='UPDATE',
+        description=f'Status changed from {old_status} to Available (trailer returned)'
+    )
+    db.session.add(audit_status)
     db.session.commit()
     
-    flash(f'Trailer {assignment.trailer.trailer_id} marked as returned!', 'success')
+    flash(f'Trailer {assignment.trailer.trailer_id} returned and status updated to "Available"!', 'success')
     return redirect(url_for('driver_assignments'))
 
 @app.route('/reports')
@@ -282,14 +374,18 @@ def audit_log():
     trailer_id = request.args.get('trailer_id')
     
     if trailer_id:
+        # Find trailer by trailer_id string (not database id)
         trailer = Trailer.query.filter_by(trailer_id=trailer_id).first()
         if trailer:
+            # Filter logs by the trailer's database id
             logs = AuditLog.query.filter_by(trailer_id=trailer.id).order_by(
                 AuditLog.created_at.desc()
             ).all()
         else:
             logs = []
+            flash(f'Trailer {trailer_id} not found.', 'error')
     else:
+        # Show all logs
         logs = AuditLog.query.join(Trailer).order_by(
             AuditLog.created_at.desc()
         ).all()
