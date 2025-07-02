@@ -415,3 +415,10 @@ def not_found_error(error):
 def internal_error(error):
     db.session.rollback()
     return render_template('base.html'), 500
+
+@app.route("/init-db")
+def init_db():
+    from app import db
+    db.create_all()
+    return "✅ Database initialized"
+
