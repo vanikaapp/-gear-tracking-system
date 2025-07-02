@@ -60,20 +60,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Form validation only for actual search forms - don't interfere with add/edit forms
-
-searchForms.forEach(searchInput => {
-    const form = searchInput.closest('form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            if (!form.checkValidity()) {
-                e.preventDefault();
-                e.stopPropagation();
-                searchInput.focus();
-            }
-            form.classList.add('was-validated');
-        });
-    }
-});
+    const searchForms = document.querySelectorAll('form[method="GET"] input[name="search"]');
+    searchForms.forEach(searchInput => {
+        const form = searchInput.closest('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    searchInput.focus();
+                }
+                form.classList.add('was-validated');
+            });
+        }
+    });
 
     // Remove all submit button interference - let forms work naturally
     // Only add loading states to very specific buttons that we know need it
