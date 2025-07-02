@@ -4,7 +4,7 @@ import pytz
 from app import app, db
 from models import Trailer, GearSnapshot, DriverAssignment, AuditLog, get_est_now
 
-# EST timezone
+# EST timezone # trigger redeploy
 EST = pytz.timezone('US/Eastern')
 
 @app.route('/')
@@ -421,4 +421,5 @@ def init_db():
     from app import db
     db.create_all()
     return "✅ Database initialized"
+
 
