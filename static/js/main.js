@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Form validation only for actual search forms - don't interfere with add/edit forms
-const searchForms = document.querySelectorAll('form[method="GET"] input[name="search"]');
+
 searchForms.forEach(searchInput => {
     const form = searchInput.closest('form');
     if (form) {
