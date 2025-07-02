@@ -96,21 +96,29 @@ def delete_trailer(trailer_id):
 @app.route('/trailers/add', methods=['GET', 'POST'])
 def add_trailer():
     """Add a new trailer"""
+    app.logger.info(f"add_trailer called with method: {request.method}")
+    
     if request.method == 'POST':
         try:
+            app.logger.info("Processing POST request for add_trailer")
+            
             trailer_id = request.form.get('trailer_id', '').strip()
             location = request.form.get('location', '').strip()
             status = request.form.get('status', 'Available')
             notes = request.form.get('notes', '').strip()
             
+            app.logger.info(f"Form data - ID: {trailer_id}, Location: {location}, Status: {status}")
+            
             # Validate required fields
             if not trailer_id:
+                app.logger.warning("Trailer ID is missing")
                 flash('Trailer ID is required!', 'error')
                 return render_template('add_trailer.html')
             
             # Check if trailer ID already exists
             existing = Trailer.query.filter_by(trailer_id=trailer_id).first()
             if existing:
+                app.logger.warning(f"Trailer {trailer_id} already exists")
                 flash(f'Trailer {trailer_id} already exists!', 'error')
                 return render_template('add_trailer.html')
             
@@ -121,9 +129,11 @@ def add_trailer():
                 notes=notes if notes else None
             )
             
+            app.logger.info(f"Creating trailer object: {trailer}")
+            
             db.session.add(trailer)
             db.session.commit()
-            app.logger.info(f"Trailer {trailer_id} added with ID {trailer.id}")
+            app.logger.info(f"Trailer {trailer_id} added successfully with ID {trailer.id}")
             
             # Create audit log
             audit = AuditLog(
@@ -140,10 +150,11 @@ def add_trailer():
             
         except Exception as e:
             db.session.rollback()
-            app.logger.error(f"Error adding trailer: {str(e)}")
+            app.logger.error(f"Error adding trailer: {str(e)}", exc_info=True)
             flash(f'Error adding trailer: {str(e)}', 'error')
             return render_template('add_trailer.html')
     
+    app.logger.info("Rendering add_trailer.html template")
     return render_template('add_trailer.html')
 
 @app.route('/gear-snapshots')
