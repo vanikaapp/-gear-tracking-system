@@ -1,3 +1,4 @@
+console.log("JAVASCRIPT LOADED - VERSION 2025-07-02-FIXED");
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize tooltips if any
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
